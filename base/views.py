@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 
-from .models import Advocates
-from .serializers import AdvocatesSerializer
+from .models import Advocates, Company
+from .serializers import AdvocatesSerializer, CompanySerializer
 
 
 
@@ -17,7 +17,6 @@ def endpoints(request):
   data = ['/advocates', '/advocades/:username']
   #return JsonResponse(data, safe=False)
   return Response(data)
-
 
 
 @api_view(['GET', 'POST'])
@@ -34,13 +33,20 @@ def advocates_list(request):
     return Response(serializer.data)
   
   if request.method == 'POST':
+    company_name = request.data['company']
+    try:
+      company = Company.objects.get(name=company_name)
+    except Company.DoesNotExist:
+      return Response({'message': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
     
     advocate = Advocates.objects.create(
       username = request.data['username'],
-      bio = request.data['bio']
+      bio = request.data['bio'],
+      company = company
     )
     serializer = AdvocatesSerializer(advocate, many=False)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 
 
@@ -83,8 +89,15 @@ class Advocate_detail(APIView):
   
   def put(self, request, username):
     advocate = self.get_object(username)
+    company_name = request.data['company']
+    try:
+      company = Company.objects.get(name=company_name)
+    except Company.DoesNotExist:
+      return Response({'message': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+    
     advocate.username = request.data['username']
     advocate.bio = request.data['bio']
+    advocate.company = company
     advocate.save()
     serializer = AdvocatesSerializer(advocate, many=False)
     return Response(serializer.data)
@@ -94,3 +107,20 @@ class Advocate_detail(APIView):
     advocate.delete()
     return Response("delete successful")
   
+  
+  
+
+@api_view(['GET', 'POST'])
+def company_list(request):
+  if request.method == 'GET':
+    companies = Company.objects.all()
+    serializer = CompanySerializer(companies, many=True)
+    return Response(serializer.data)
+  
+  if request.method == 'POST':
+    company = Company.objects.create(
+      name = request.data['name'],
+      bio = request.data['bio']
+    )
+    serializer = CompanySerializer(company, many=False)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)  

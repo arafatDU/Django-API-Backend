@@ -8,7 +8,7 @@ urlpatterns = [
     path('advocates/<str:username>/', views.Advocate_detail.as_view()),
     
     # companies/
-    #path('companies/', views.company_list)
+    path('companies/', views.company_list)
     # companies/id
     
 ]
